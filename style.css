@@ -1,1 +1,52 @@
-body{margin:0;background:#121212;font-family:sans-serif;color:white;display:flex;justify-content:center;padding:20px}.container{background:rgba(255,255,255,0.05);padding:25px;width:100%;max-width:600px;border-radius:18px;backdrop-filter:blur(10px)}button{width:100%;padding:14px;border-radius:10px;border:none;background:#1DB954;color:white;font-size:1.2rem;cursor:pointer;margin-top:10px}button:hover{background:#18a148}.hidden{display:none}#options button{background:#2a2a2a;border:1px solid #333;padding:14px;text-align:left;margin-top:10px;border-radius:10px}.correct{background:#1DB954!important}.wrong{background:#e63946!important}#player{width:100%;margin-top:20px}
+body {
+  margin: 0;
+  background: #121212;
+  color: white;
+  display: flex;
+  justify-content: center;
+  font-family: sans-serif;
+  padding: 20px;
+}
+
+.container {
+  max-width: 600px;
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  padding: 30px;
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  background: #1DB954;
+  border: none;
+  font-size: 1.2rem;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #18a148;
+}
+
+.hidden {
+  display: none;
+}
+
+#options button {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  text-align: left;
+}
+
+.correct {
+  background: #1DB954 !important;
+}
+
+.wrong {
+  background: #e63946 !important;
+}
