@@ -1,6 +1,7 @@
 const CLIENT_ID = "cb562e24e68e49bdb497b65bc42cd010";
 const REDIRECT_URI = "https://kidsoz.github.io/musikquiz/redirect.html";
 const SCOPES = "playlist-read-private playlist-read-collaborative";
+const playlist = "3pEXYGttJuLxSlrxN4UDcn"
 
 async function generateVerifier(){const arr=new Uint8Array(64);crypto.getRandomValues(arr);return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').substring(0,128);}
 async function sha256(input){const enc=new TextEncoder().encode(input);return crypto.subtle.digest('SHA-256',enc);}
