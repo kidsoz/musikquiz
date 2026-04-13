@@ -1,35 +1,22 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang='sv'>
 <head>
-  <meta charset="UTF-8">
-  <title>Spotify Embed Musikquiz</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset='UTF-8'>
+<title>Spotify Musikquiz</title>
+<link rel='stylesheet' href='style.css'>
 </head>
-
 <body>
-
-  <div class="container">
-    <h1>🎵 Spotify Musikquiz</h1>
-
-    <div id="question"></div>
-
-    <iframe id="spotifyPlayer" 
-      style="border-radius:12px" 
-      width="100%" 
-      height="200"
-      frameBorder="0" 
-      allowfullscreen 
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-    </iframe>
-
-    <div id="options"></div>
-
-    <div id="result"></div>
-
-    <button id="nextBtn" class="hidden">Nästa fråga</button>
-
-  </div>
-
-<script src="script.js"></script>
+<div class='container'>
+<h1>🎵 Glow Spotify Musikquiz</h1>
+<button id='loginBtn'>Logga in med Spotify</button>
+<div id='quizArea' class='hidden'>
+  <h2 id='questionText'></h2>
+  <audio id='audioPlayer' controls></audio>
+  <div id='options'></div>
+  <div id='result'></div>
+  <button id='nextBtn' class='hidden'>Nästa fråga</button>
+</div>
+</div>
+<script src='script.js'></script>
 </body>
 </html>
