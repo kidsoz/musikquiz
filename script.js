@@ -14,11 +14,33 @@ async function exchange(code){const verifier=localStorage.getItem('code_verifier
 
 let tracks=[];let idx=0;let score=0;
 
-async function loadPlaylist(){const token=localStorage.getItem('spotify_access_token');const playlist="3pEXYGttJuLxSlrxN4UDcn";const res=await fetch(`https://api.spotify.com/v1/playlists/${playlist}/tracks`,{headers:{Authorization:`Bearer ${token}`}});const data=await res.json();tracks=data.items.map(i=>i.track).filter(t=>t.preview_url);document.getElementById('loginBtn').classList.add('hidden');document.getElementById('quizArea').classList.remove('hidden');loadQuestion();}
 
-function loadQuestion(){const q=tracks[idx];document.getElementById('questionText').textContent='Vilken låt är detta?';document.getElementById('audioPlayer').src=q.preview_url;document.getElementById('result').textContent='';document.getElementById('nextBtn').classList.add('hidden');const opts=[q.name, fake(q.name), fake(q.name)];shuffle(opts);const optDiv=document.getElementById('options');optDiv.innerHTML='';opts.forEach(o=>{const btn=document.createElement('button');btn.textContent=o;btn.onclick=()=>{if(o===q.name){btn.classList.add('correct');score++;document.getElementById('result').textContent='✅ Rätt!';} else {btn.classList.add('wrong');document.getElementById('result').textContent='❌ Fel!';} disableAll();document.getElementById('nextBtn').classList.remove('hidden');};optDiv.appendChild(btn);});}
+async function loadPlaylistWithId(playlistId) {
+  const token = localStorage.getItem("spotify_access_token");
 
-document.getElementById('nextBtn').onclick=()=>{idx++;if(idx<tracks.length)loadQuestion();else finish();};
+  const res = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  const data = await res.json();
+
+  tracks = data.items
+    .map(i => i.track)
+    .filter(t => t && t.preview_url); // endast låtar med preview
+
+  if (tracks.length === 0) {
+    alert("Inga låtar med förhandslyssning hittades i spellistan.");
+    return;
+  }
+
+  document.getElementById("playlistInputArea").classList.add("hidden");
+  document.getElementById("quizArea").classList.remove("hidden");
+
+  idx = 0;
+  score = 0;
+  loadQuestion();
+}
 
 function fake(t){return t.split(' ').reverse().join(' ');}
 function disableAll(){document.querySelectorAll('#options button').forEach(b=>b.disabled=true);}
@@ -37,3 +59,14 @@ ocument.getElementById("loadPlaylistBtn").onclick = () => {
   loadPlaylistWithId(playlistId);
 };
 ``
+
+function extractPlaylistId(input) {
+  // Om användaren klistrar in en hel länk
+  const match = input.match(/playlist\/([a-zA-Z0-9]+)/);
+  if (match && match[1]) return match[1];
+
+  // Om användaren klistrar in bara ID
+  if (/^[a-zA-Z0-9]{22}$/.test(input)) return input;
+
+  return null;
+}
