@@ -1,19 +1,141 @@
+/* =============================
+   KONFIGURATION
+============================= */
+
 const CLIENT_ID = "cb562e24e68e49bdb497b65bc42cd010";
 const REDIRECT_URI = "https://kidsoz.github.io/musikquiz/redirect.html";
 const SCOPES = "playlist-read-private playlist-read-collaborative";
 
-async function generateVerifier(){const arr=new Uint8Array(64);crypto.getRandomValues(arr);return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').substring(0,128);}
-async function sha256(input){const enc=new TextEncoder().encode(input);return crypto.subtle.digest('SHA-256',enc);}
-function base64urlencode(b){return btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+/* =============================
+   PKCE – HJÄLPFUNKTIONER
+============================= */
 
-document.getElementById('loginBtn').onclick=async()=>{const verifier=await generateVerifier();localStorage.setItem('code_verifier',verifier);const challenge=base64urlencode(await sha256(verifier));const url=`https://accounts.spotify.com/authorize?response_type=code&client_id=${CLIENT_ID}&scope=${encodeURIComponent(SCOPES)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&code_challenge_method=S256&code_challenge=${challenge}`;window.location.href=url;};
+function generateCodeVerifier() {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  let verifier = "";
+  const random = crypto.getRandomValues(new Uint8Array(64));
 
-const code=localStorage.getItem('spotify_auth_code');if(code)exchange(code);
+  for (let i = 0; i < random.length; i++) {
+    verifier += chars[random[i] % chars.length];
+  }
+  return verifier;
+}
 
-async function exchange(code){const verifier=localStorage.getItem('code_verifier');const body=new URLSearchParams({client_id:CLIENT_ID,grant_type:'authorization_code',code:code,redirect_uri:REDIRECT_URI,code_verifier:verifier});const res=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await res.json();localStorage.setItem('spotify_access_token',data.access_token);localStorage.removeItem('spotify_auth_code');loadPlaylist();}
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
 
-let tracks=[];let idx=0;let score=0;
+/* =============================
+   SPOTIFY LOGIN
+============================= */
 
+document.addEventListener("DOMContentLoaded", () => {
+  const loginBtn = document.getElementById("loginBtn");
+
+  if (loginBtn) {
+    loginBtn.onclick = async () => {
+      const verifier = generateCodeVerifier();
+      localStorage.setItem("pkce_verifier", verifier);
+
+      const challenge = await generateCodeChallenge(verifier);
+
+      const authUrl =
+        "https://accounts.spotify.com/authorize" +
+        "?response_type=code" +
+        "&client_id=" + CLIENT_ID +
+        "&scope=" + encodeURIComponent(SCOPES) +
+        "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
+        "&code_challenge_method=S256" +
+        "&code_challenge=" + challenge;
+
+      window.location.href = authUrl;
+    };
+  }
+
+  // Om vi kommer tillbaka från Spotify med ?code=...
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+
+  if (code) {
+    exchangeCodeForToken(code);
+  }
+
+  const loadBtn = document.getElementById("loadPlaylistBtn");
+  if (loadBtn) {
+    loadBtn.onclick = handlePlaylistInput;
+  }
+});
+
+/* =============================
+   TOKEN-UTBYTE
+============================= */
+
+async function exchangeCodeForToken(code) {
+  const verifier = localStorage.getItem("pkce_verifier");
+  if (!verifier) return;
+
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: verifier
+  });
+
+  const res = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+
+  if (!res.ok) {
+    console.error("Token exchange failed:", await res.text());
+    return;
+  }
+
+  const data = await res.json();
+  localStorage.setItem("spotify_access_token", data.access_token);
+  localStorage.removeItem("pkce_verifier");
+
+  document.getElementById("playlistInputArea").classList.remove("hidden");
+}
+
+/* =============================
+   SPELLISTA VIA INPUT
+============================= */
+
+async function handlePlaylistInput() {
+  const input = document.getElementById("playlistInput").value.trim();
+  const playlistId = extractPlaylistId(input);
+
+  if (!playlistId) {
+    alert("Ogiltig Spotify-spellista");
+    return;
+  }
+
+  loadPlaylistWithId(playlistId);
+}
+
+function extractPlaylistId(input) {
+  const match = input.match(/playlist\/([a-zA-Z0-9]+)/);
+  if (match) return match[1];
+  if (/^[a-zA-Z0-9]{22}$/.test(input)) return input;
+  return null;
+}
+
+/* =============================
+   QUIZ
+============================= */
+
+let tracks = [];
+let idx = 0;
+let score = 0;
 
 async function loadPlaylistWithId(playlistId) {
   const token = localStorage.getItem("spotify_access_token");
@@ -24,13 +146,17 @@ async function loadPlaylistWithId(playlistId) {
   );
 
   const data = await res.json();
+  if (!data.items) {
+    alert("Kunde inte läsa spellistan");
+    return;
+  }
 
   tracks = data.items
     .map(i => i.track)
-    .filter(t => t && t.preview_url); // endast låtar med preview
+    .filter(t => t && t.preview_url);
 
   if (tracks.length === 0) {
-    alert("Inga låtar med förhandslyssning hittades i spellistan.");
+    alert("Inga låtar med preview hittades");
     return;
   }
 
@@ -42,31 +168,17 @@ async function loadPlaylistWithId(playlistId) {
   loadQuestion();
 }
 
-function fake(t){return t.split(' ').reverse().join(' ');}
-function disableAll(){document.querySelectorAll('#options button').forEach(b=>b.disabled=true);}
-function shuffle(a){return a.sort(()=>Math.random()-0.5);}
-function finish(){document.getElementById('quizArea').innerHTML=`<h2>Klart! Du fick ${score} av ${tracks.length} rätt 🎉</h2>`;}
+function loadQuestion() {
+  const q = tracks[idx];
+  document.getElementById("questionText").textContent = "Vilken låt är detta?";
+  document.getElementById("audioPlayer").src = q.preview_url;
+}
 
-ocument.getElementById("loadPlaylistBtn").onclick = () => {
-  const input = document.getElementById("playlistInput").value.trim();
-  const playlistId = extractPlaylistId(input);
+/* =============================
+   RESULTAT
+============================= */
 
-  if (!playlistId) {
-    alert("Kunde inte läsa spellistan. Klistra in en korrekt Spotify-länk.");
-    return;
-  }
-
-  loadPlaylistWithId(playlistId);
-};
-``
-
-function extractPlaylistId(input) {
-  // Om användaren klistrar in en hel länk
-  const match = input.match(/playlist\/([a-zA-Z0-9]+)/);
-  if (match && match[1]) return match[1];
-
-  // Om användaren klistrar in bara ID
-  if (/^[a-zA-Z0-9]{22}$/.test(input)) return input;
-
-  return null;
+function finish() {
+  document.getElementById("quizArea").innerHTML =
+    `<h2>Klart! Du fick ${score} av ${tracks.length} rätt 🎉</h2>`;
 }
