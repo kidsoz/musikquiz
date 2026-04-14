@@ -1,15 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spotify redirect</title>
+</head>
 <body>
-<script>
-const params = new URLSearchParams(window.location.search);
-const code = params.get('code');
-if(code){
-  localStorage.setItem('spotify_auth_code', code);
-  window.location.href='index.html';
-}else{
-  document.body.innerHTML='Error: Ingen kod mottagen.';
-}
-</script>
-</body>
-</html>
+  <p>Loggar in via Spotify…</p>
+  <script>
+    // Behåll code i URL och skicka användaren vidare
+    window.location.replace(
+      "index.html" + window.location.search
