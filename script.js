@@ -24,3 +24,16 @@ function fake(t){return t.split(' ').reverse().join(' ');}
 function disableAll(){document.querySelectorAll('#options button').forEach(b=>b.disabled=true);}
 function shuffle(a){return a.sort(()=>Math.random()-0.5);}
 function finish(){document.getElementById('quizArea').innerHTML=`<h2>Klart! Du fick ${score} av ${tracks.length} rätt 🎉</h2>`;}
+
+ocument.getElementById("loadPlaylistBtn").onclick = () => {
+  const input = document.getElementById("playlistInput").value.trim();
+  const playlistId = extractPlaylistId(input);
+
+  if (!playlistId) {
+    alert("Kunde inte läsa spellistan. Klistra in en korrekt Spotify-länk.");
+    return;
+  }
+
+  loadPlaylistWithId(playlistId);
+};
+``
