@@ -1,21 +1,20 @@
-/* =============================
+/* ===============================
    KONFIGURATION
-============================= */
+================================ */
 
-const CLIENT_ID = "cb562e24e68e49bdb497b65bc42cd010";
+const CLIENT_ID = "DITT_RIKTIGA_SPOTIFY_CLIENT_ID_HÄR";
 const REDIRECT_URI = "https://kidsoz.github.io/musikquiz/redirect.html";
 const SCOPES = "playlist-read-private playlist-read-collaborative";
 
-/* =============================
-   PKCE – HJÄLPFUNKTIONER
-============================= */
+/* ===============================
+   PKCE-HJÄLPMETODER
+================================ */
 
 function generateCodeVerifier() {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
   let verifier = "";
   const random = crypto.getRandomValues(new Uint8Array(64));
-
   for (let i = 0; i < random.length; i++) {
     verifier += chars[random[i] % chars.length];
   }
@@ -31,50 +30,52 @@ async function generateCodeChallenge(verifier) {
     .replace(/=+$/, "");
 }
 
-/* =============================
-   SPOTIFY LOGIN
-============================= */
+/* ===============================
+   START
+================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
-  const loginBtn = document.getElementById("loginBtn");
-
-  if (loginBtn) {
-    loginBtn.onclick = async () => {
-      const verifier = generateCodeVerifier();
-      localStorage.setItem("pkce_verifier", verifier);
-
-      const challenge = await generateCodeChallenge(verifier);
-
-      const authUrl =
-        "https://accounts.spotify.com/authorize" +
-        "?response_type=code" +
-        "&client_id=" + CLIENT_ID +
-        "&scope=" + encodeURIComponent(SCOPES) +
-        "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
-        "&code_challenge_method=S256" +
-        "&code_challenge=" + challenge;
-
-      window.location.href = authUrl;
-    };
-  }
-
-  // Om vi kommer tillbaka från Spotify med ?code=...
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-
-  if (code) {
-    exchangeCodeForToken(code);
-  }
-
-  const loadBtn = document.getElementById("loadPlaylistBtn");
-  if (loadBtn) {
-    loadBtn.onclick = handlePlaylistInput;
-  }
+  setupLogin();
+  handleRedirect();
+  setupPlaylistInput();
 });
 
-/* =============================
-   TOKEN-UTBYTE
-============================= */
+/* ===============================
+   LOGIN
+================================ */
+
+function setupLogin() {
+  const loginBtn = document.getElementById("loginBtn");
+  if (!loginBtn) return;
+
+  loginBtn.onclick = async () => {
+    const verifier = generateCodeVerifier();
+    localStorage.setItem("pkce_verifier", verifier);
+
+    const challenge = await generateCodeChallenge(verifier);
+
+    const authUrl =
+      "https://accounts.spotify.com/authorize" +
+      "?response_type=code" +
+      "&client_id=" + CLIENT_ID +
+      "&scope=" + encodeURIComponent(SCOPES) +
+      "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
+      "&code_challenge_method=S256" +
+      "&code_challenge=" + challenge;
+
+    window.location.href = authUrl;
+  };
+}
+
+/* ===============================
+   REDIRECT → TOKEN
+================================ */
+
+function handleRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (code) exchangeCodeForToken(code);
+}
 
 async function exchangeCodeForToken(code) {
   const verifier = localStorage.getItem("pkce_verifier");
@@ -95,7 +96,7 @@ async function exchangeCodeForToken(code) {
   });
 
   if (!res.ok) {
-    console.error("Token exchange failed:", await res.text());
+    console.error("Token exchange failed", await res.text());
     return;
   }
 
@@ -106,20 +107,25 @@ async function exchangeCodeForToken(code) {
   document.getElementById("playlistInputArea").classList.remove("hidden");
 }
 
-/* =============================
-   SPELLISTA VIA INPUT
-============================= */
+/* ===============================
+   SPELLISTA (INPUT)
+================================ */
 
-async function handlePlaylistInput() {
-  const input = document.getElementById("playlistInput").value.trim();
-  const playlistId = extractPlaylistId(input);
+function setupPlaylistInput() {
+  const btn = document.getElementById("loadPlaylistBtn");
+  if (!btn) return;
 
-  if (!playlistId) {
-    alert("Ogiltig Spotify-spellista");
-    return;
-  }
+  btn.onclick = () => {
+    const input = document.getElementById("playlistInput").value.trim();
+    const playlistId = extractPlaylistId(input);
 
-  loadPlaylistWithId(playlistId);
+    if (!playlistId) {
+      alert("Ogiltig Spotify-spellista");
+      return;
+    }
+
+    loadPlaylistWithId(playlistId);
+  };
 }
 
 function extractPlaylistId(input) {
@@ -129,9 +135,9 @@ function extractPlaylistId(input) {
   return null;
 }
 
-/* =============================
+/* ===============================
    QUIZ
-============================= */
+================================ */
 
 let tracks = [];
 let idx = 0;
@@ -155,11 +161,6 @@ async function loadPlaylistWithId(playlistId) {
     .map(i => i.track)
     .filter(t => t && t.preview_url);
 
-  if (tracks.length === 0) {
-    alert("Inga låtar med preview hittades");
-    return;
-  }
-
   document.getElementById("playlistInputArea").classList.add("hidden");
   document.getElementById("quizArea").classList.remove("hidden");
 
@@ -169,16 +170,8 @@ async function loadPlaylistWithId(playlistId) {
 }
 
 function loadQuestion() {
-  const q = tracks[idx];
-  document.getElementById("questionText").textContent = "Vilken låt är detta?";
-  document.getElementById("audioPlayer").src = q.preview_url;
-}
-
-/* =============================
-   RESULTAT
-============================= */
-
-function finish() {
-  document.getElementById("quizArea").innerHTML =
-    `<h2>Klart! Du fick ${score} av ${tracks.length} rätt 🎉</h2>`;
+  const track = tracks[idx];
+  document.getElementById("questionText").textContent =
+    "Vilken låt är detta?";
+  document.getElementById("audioPlayer").src = track.preview_url;
 }
