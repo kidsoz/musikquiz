@@ -8,7 +8,16 @@
 <body>
 <div class='container'>
 <h1>🎵 Glow Spotify Musikquiz</h1>
-<button id='loginBtn'>Logga in med Spotify</button>
+<button id='loginBtn'>Logga in med Spotify</button>  
+<div id="playlistInputArea" class="hidden">
+  <input
+    id="playlistInput"
+    type="text"
+    placeholder="Klistra in Spotify-spellista (länk eller ID)"
+  />
+  <button id="loadPlaylistBtn">Starta quiz</button>
+</div>
+
 <div id='quizArea' class='hidden'>
   <h2 id='questionText'></h2>
   <audio id='audioPlayer' controls></audio>
